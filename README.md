@@ -188,8 +188,6 @@ Returns:
 
 > `/set_read?mail_id=...&is_read=...` - Set message read state
 
-* *By default empty value mean no filter by given field*
-
 Returns:
 ```
 {
