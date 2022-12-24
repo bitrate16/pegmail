@@ -47,7 +47,7 @@ Endpoints
 > `/count` - Get total mail count
 
 Returns:
-```json
+```
 {
 	'count': 1234
 }
@@ -60,7 +60,7 @@ Returns:
 > `mail?mail_id=...` - Get full message info by it's ID
 
 Returns:
-```json
+```
 {
 	'timestamp': 1234567
 	'mail_id': 3,
@@ -80,7 +80,7 @@ Returns:
 * *`reverse` is optional parameter and default is `0`*
 
 Returns:
-```json
+```
 {
 	'items': [
 		{
@@ -106,7 +106,7 @@ Returns:
 * *`reverse` is optional parameter and default is `0`*
 
 Returns:
-```json
+```
 {
 	'items': [
 		{
@@ -130,7 +130,7 @@ Returns:
 * *By default empty value mean no filter by given field*
 
 Returns:
-```json
+```
 {
 	'count': 432
 }
@@ -141,7 +141,7 @@ Returns:
 * *By default empty value mean no filter by given field*
 
 Returns:
-```json
+```
 {
 	'items': [
 		{
@@ -167,7 +167,7 @@ Returns:
 * *By default empty value mean no filter by given field*
 
 Returns:
-```json
+```
 {
 	'items': [
 		{
@@ -191,7 +191,7 @@ Returns:
 * *By default empty value mean no filter by given field*
 
 Returns:
-```json
+```
 {
 	'is_read': 1
 }
