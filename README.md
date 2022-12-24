@@ -19,6 +19,18 @@ Commandline
 
 Server arguments:
 ```
+usage: server.py [-h] [--file_hash_length FILE_HASH_LENGTH]
+                 [--media_path MEDIA_PATH] [--db_path DB_PATH]
+                 [--server_addr SERVER_ADDR] [--smtp_port SMTP_PORT]
+                 [--api_port API_PORT] [--ssl_cert SSL_CERT] [--ssl_key SSL_KEY]
+                 [--server_host SERVER_HOST [SERVER_HOST ...]]
+                 [--generate_nginx_config]
+                 [--api_remote_address API_REMOTE_ADDRESS [API_REMOTE_ADDRESS ...]]
+                 [--debug]
+
+pegmail SMTP server
+
+optional arguments:
   -h, --help            show this help message and exit
   --file_hash_length FILE_HASH_LENGTH
                         media file hash length
@@ -26,10 +38,13 @@ Server arguments:
                         media folder path
   --db_path DB_PATH     database path
   --server_addr SERVER_ADDR
-                        server address for nginx to forward auth requests and mail traffic
+                        server address for nginx to forward auth requests and mail
+                        traffic
   --smtp_port SMTP_PORT
                         SMTP server port
   --api_port API_PORT   API server port
+  --ssl_cert SSL_CERT   SSL certificate path (enables nginx proxy)
+  --ssl_key SSL_KEY     SSL key path (enables nginx proxy)
   --server_host SERVER_HOST [SERVER_HOST ...]
                         server host names user to filter incoming mail by mail_to
   --generate_nginx_config
@@ -38,6 +53,8 @@ Server arguments:
                         remote IPs used to restrict API access
   --debug               enable debug logging
 ```
+
+*`--ssl_cert` and `--ssl_key` enables no-nginx mode and forces server to handle ssl context. Avoiding these arguments forces server to be behind nginx that should handle ssl context and use `/auth` endpoint for connection authorization.*
 
 Endpoints
 ---------

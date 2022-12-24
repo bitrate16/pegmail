@@ -16,6 +16,7 @@
 
 
 import aiosmtpd.controller
+import aiosmtpd.handlers
 
 import mimetypes
 import argparse
@@ -28,6 +29,7 @@ import email
 import json
 import time
 import sys
+import ssl
 import os
 
 import email.message
@@ -51,6 +53,9 @@ api_app: aiohttp.web.Application = None
 # Args
 args: dict = None
 
+# SSL Context
+context: ssl.SSLContext = None
+
 # Config
 DEBUG_LOG = False
 
@@ -59,7 +64,17 @@ DEBUG_LOG = False
 #                                C L A S S E S
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+class CustomController(aiosmtpd.controller.Controller):
+	def factory(self):
+		if context is not None:
+			return aiosmtpd.smtp.SMTP(self.handler, require_starttls=True, tls_context=context)
+		else:
+			return aiosmtpd.smtp.SMTP(self.handler)
+
 class CustomHandler:
+	# async def handle_RCPT(self, server, session, envelope, address, rcpt_options):
+	# 	print('aaaaaaaaaaa')
+
 	async def handle_DATA(self, server: aiosmtpd.smtp.SMTP, session: aiosmtpd.smtp.Session, envelope: aiosmtpd.smtp.Envelope):
 		timestamp = round(time.time() * 1000)
 
@@ -961,6 +976,8 @@ if __name__ == '__main__':
 	parser.add_argument('--server_addr', required=False, dest='server_addr', type=str, default='127.0.0.1', help='server address for nginx to forward auth requests and mail traffic')
 	parser.add_argument('--smtp_port', required=False, dest='smtp_port', type=int, default=25, help='SMTP server port')
 	parser.add_argument('--api_port', required=False, dest='api_port', type=int, default=35, help='API server port')
+	parser.add_argument('--ssl_cert', required=False, dest='ssl_cert', type=str, default=None, help='SSL certificate path (enables nginx proxy)')
+	parser.add_argument('--ssl_key', required=False, dest='ssl_key', type=str, default=None, help='SSL key path (enables nginx proxy)')
 	parser.add_argument('--server_host', required=False, dest='server_host', nargs='+', type=str, default=['example.com'], help='server host names user to filter incoming mail by mail_to')
 	parser.add_argument('--generate_nginx_config', dest='generate_nginx_config', action='store_true', help='generate sample NGINX config')
 	parser.add_argument('--api_remote_address', required=False, dest='api_remote_address', nargs='+', type=str, default=[], help='remote IPs used to restrict API access')
@@ -974,8 +991,17 @@ if __name__ == '__main__':
 
 	# Generate sample nginx config & exit
 	if args.generate_nginx_config:
-		for host in args.server_host:
-			print(f"""mail {{
+		if args.ssl_cert is not None and args.ssl_key is not None:
+			for host in args.server_host:
+				print(f"""stream {{
+    server {{
+        listen 25;
+        proxy_pass { args.server_addr }:{ args.smtp_port };
+    }}
+}}\n""")
+		else:
+			for host in args.server_host:
+				print(f"""mail {{
     # Change to your DNS record
     server_name mx.{ host };
 
@@ -991,7 +1017,7 @@ if __name__ == '__main__':
     ssl_certificate_key /etc/letsencrypt/live/{ host }/privkey.pem;
 
     server {{
-        listen { args.smtp_port };
+        listen 25;
         protocol smtp;
         smtp_auth none;
         proxy on;
@@ -1001,9 +1027,17 @@ if __name__ == '__main__':
 }}\n""")
 		exit(0)
 
-	DEBUG_LOG = DEBUG_LOG or args.debug
-
 	print('Starting MAIL server')
+
+	if args.ssl_cert is not None and args.ssl_key is not None:
+		print('Starting in self-ssl mode')
+		context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+		context.load_cert_chain(args.ssl_cert, args.ssl_key)
+	else:
+		print('Starting in nginx-ssl mode')
+		context = None
+
+	DEBUG_LOG = DEBUG_LOG or args.debug
 
 	atexit.register(dispose)
 
@@ -1048,11 +1082,12 @@ if __name__ == '__main__':
 		);
 	""")
 
-	controller = aiosmtpd.controller.Controller(CustomHandler(), hostname='0.0.0.0' if sys.platform == 'linux' else '127.0.0.1', port=args.smtp_port)
+	controller = CustomController(CustomHandler(), hostname='0.0.0.0' if sys.platform == 'linux' else '127.0.0.1', port=args.smtp_port)#, ssl_context=context)
 
 	# API app
 	api_app = aiohttp.web.Application()
-	api_app.router.add_get('/auth', api__get_auth)
+	if not (args.ssl_cert is not None and args.ssl_key is not None):
+		api_app.router.add_get('/auth', api__get_auth)
 	api_app.router.add_get('/count', api__get_count)
 	api_app.router.add_get('/media', api__get_media)
 	api_app.router.add_get('/mail', api__get_mail)
