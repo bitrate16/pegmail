@@ -27,6 +27,7 @@ import atexit
 import email
 import json
 import time
+import sys
 import os
 
 import email.message
@@ -1047,7 +1048,7 @@ if __name__ == '__main__':
 		);
 	""")
 
-	controller = aiosmtpd.controller.Controller(CustomHandler(), hostname='127.0.0.1', port=args.smtp_port)
+	controller = aiosmtpd.controller.Controller(CustomHandler(), hostname='0.0.0.0' if sys.platform == 'linux' else '127.0.0.1', port=args.smtp_port)
 
 	# API app
 	api_app = aiohttp.web.Application()
